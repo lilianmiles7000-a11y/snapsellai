@@ -11,20 +11,25 @@ const corsHeaders = {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
-  try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("Stripe is not configured.");
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
+  if (!stripeKey) {
+    return new Response(
+      JSON.stringify({ error: "Stripe is not configured. Add STRIPE_SECRET_KEY to your Supabase project secrets." }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  }
 
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
     if (authError || !user) throw new Error("Unauthorized");
 
     const { price_id, success_url, cancel_url } = await req.json();
@@ -39,12 +44,16 @@ Deno.serve(async (req: Request) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    let customerId = sub?.stripe_customer_id;
+    let customerId = sub?.stripe_customer_id as string | undefined;
     if (!customerId) {
-      const { data: profile } = await supabase.from("profiles").select("email, full_name").eq("id", user.id).maybeSingle();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", user.id)
+        .maybeSingle();
       const customer = await stripe.customers.create({
-        email: profile?.email ?? user.email,
-        name: profile?.full_name ?? undefined,
+        email: (profile as { email?: string })?.email ?? user.email,
+        name: (profile as { full_name?: string })?.full_name ?? undefined,
         metadata: { supabase_user_id: user.id },
       });
       customerId = customer.id;
@@ -55,8 +64,8 @@ Deno.serve(async (req: Request) => {
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: price_id, quantity: 1 }],
-      success_url: success_url ?? `${Deno.env.get("NEXT_PUBLIC_APP_URL")}/dashboard?upgraded=1`,
-      cancel_url: cancel_url ?? `${Deno.env.get("NEXT_PUBLIC_APP_URL")}/pricing`,
+      success_url: success_url ?? `${Deno.env.get("NEXT_PUBLIC_APP_URL") ?? ""}/dashboard?upgraded=1`,
+      cancel_url: cancel_url ?? `${Deno.env.get("NEXT_PUBLIC_APP_URL") ?? ""}/pricing`,
       subscription_data: {
         metadata: { supabase_user_id: user.id },
       },
@@ -66,9 +75,10 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const message = err instanceof Error ? err.message : "Internal error";
+    return new Response(
+      JSON.stringify({ error: message }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { Wand2, ChevronRight, X, Sparkles, ArrowRight } from 'lucide-react';
+import { Wand2, ChevronRight, Sparkles, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { createEnhancement, updateEnhancement } from '@/services/enhancements';
 import type { UploadedFile } from '@/components/upload-zone';
 import type { EnhancementAction } from '@/types';
 import type { Platform } from '@/types';
-import { PLATFORM_LIST } from '@/lib/constants';
+import { PLATFORMS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -27,7 +27,6 @@ interface HistoryEntry {
   enhancementId: string | null;
 }
 
-/** Per-photo editor state */
 interface PhotoState {
   original: string;
   current: string;
@@ -61,10 +60,9 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
   const downloadRef = useRef<HTMLAnchorElement>(null);
 
   const selectedPhoto = photoStates[selectedIdx];
-  const hasEnhanced = selectedPhoto?.history.length > 0;
+  const hasEnhanced = (selectedPhoto?.history.length ?? 0) > 0;
   const currentUrl = selectedPhoto?.current ?? '';
   const originalUrl = selectedPhoto?.original ?? '';
-  const showCompare = hasEnhanced;
 
   const setPhotoState = useCallback((idx: number, updater: (prev: PhotoState) => PhotoState) => {
     setPhotoStates((prev) => prev.map((s, i) => (i === idx ? updater(s) : s)));
@@ -77,7 +75,6 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
 
     setPhotoState(idx, (s) => ({ ...s, processingAction: action, failed: false }));
 
-    // Create a DB record (non-blocking UI)
     const record = await createEnhancement({
       original_url: photo.original,
       action,
@@ -86,32 +83,30 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
     });
 
     try {
-      const result = await enhanceImage({ imageUrl: photo.current, action });
-      const enhancedUrl = result.enhanced_url;
+      const result = await enhanceImage(photo.current, action);
 
-      // Update DB record
       if (record) {
         await updateEnhancement(record.id, {
-          enhanced_url: enhancedUrl,
+          enhanced_url: result.enhanced_url,
           status: 'done',
-          provider: result.provider as PhotoState['processingAction'] extends string ? never : never,
         }).catch(() => null);
       }
 
       setPhotoState(idx, (s) => {
-        const newEntry: HistoryEntry = {
-          id: `${Date.now()}-${Math.random()}`,
-          action,
-          url: enhancedUrl,
-          timestamp: new Date(),
-          enhancementId: record?.id ?? null,
-        };
-        // Truncate any redo history past current index
-        const trimmedHistory = s.history.slice(0, s.historyIndex + 1);
-        const newHistory = [...trimmedHistory, newEntry];
+        const trimmed = s.history.slice(0, s.historyIndex + 1);
+        const newHistory = [
+          ...trimmed,
+          {
+            id: `${Date.now()}-${Math.random()}`,
+            action,
+            url: result.enhanced_url,
+            timestamp: new Date(),
+            enhancementId: record?.id ?? null,
+          },
+        ];
         return {
           ...s,
-          current: enhancedUrl,
+          current: result.enhanced_url,
           history: newHistory,
           historyIndex: newHistory.length - 1,
           processingAction: null,
@@ -120,39 +115,30 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
 
       toast.success(`${action.replace(/_/g, ' ')} applied`);
     } catch (err) {
-      if (record) {
-        await updateEnhancement(record.id, { status: 'failed' }).catch(() => null);
-      }
+      if (record) await updateEnhancement(record.id, { status: 'failed' }).catch(() => null);
       setPhotoState(idx, (s) => ({ ...s, processingAction: null, failed: true }));
       toast.error(err instanceof Error ? err.message : 'Enhancement failed');
     }
   }, [selectedIdx, photoStates, listingId, setPhotoState]);
 
   const onUndo = useCallback(() => {
-    const idx = selectedIdx;
-    setPhotoState(idx, (s) => {
+    setPhotoState(selectedIdx, (s) => {
       if (s.historyIndex <= -1) return s;
-      const newIndex = s.historyIndex - 1;
-      const newUrl = newIndex === -1 ? s.original : s.history[newIndex].url;
-      return { ...s, historyIndex: newIndex, current: newUrl };
+      const ni = s.historyIndex - 1;
+      return { ...s, historyIndex: ni, current: ni === -1 ? s.original : s.history[ni].url };
     });
   }, [selectedIdx, setPhotoState]);
 
   const onRedo = useCallback(() => {
-    const idx = selectedIdx;
-    setPhotoState(idx, (s) => {
+    setPhotoState(selectedIdx, (s) => {
       if (s.historyIndex >= s.history.length - 1) return s;
-      const newIndex = s.historyIndex + 1;
-      return { ...s, historyIndex: newIndex, current: s.history[newIndex].url };
+      const ni = s.historyIndex + 1;
+      return { ...s, historyIndex: ni, current: s.history[ni].url };
     });
   }, [selectedIdx, setPhotoState]);
 
   const onReset = useCallback(() => {
-    setPhotoState(selectedIdx, (s) => ({
-      ...s,
-      current: s.original,
-      historyIndex: -1,
-    }));
+    setPhotoState(selectedIdx, (s) => ({ ...s, current: s.original, historyIndex: -1 }));
   }, [selectedIdx, setPhotoState]);
 
   const onDownload = useCallback(() => {
@@ -190,7 +176,10 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
     setSaving(false);
   }, [files, photoStates, onContinue]);
 
-  const appliedActionsForCurrent = selectedPhoto?.history.slice(0, selectedPhoto.historyIndex + 1).map((h) => h.action) ?? [];
+  const appliedActionsForCurrent =
+    selectedPhoto?.history
+      .slice(0, selectedPhoto.historyIndex + 1)
+      .map((h) => h.action) ?? [];
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -209,7 +198,7 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="border-border text-muted-foreground text-[10px]">
-            {PLATFORM_LIST.find((p) => p.id === platform)?.label}
+            {PLATFORMS.find((p) => p.id === platform)?.label}
           </Badge>
           <Button variant="ghost" size="sm" onClick={onSkip} className="text-muted-foreground text-xs">
             Skip
@@ -220,8 +209,8 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
 
       {/* Toolbar */}
       <PhotoToolbar
-        canUndo={selectedPhoto?.historyIndex > -1}
-        canRedo={selectedPhoto?.historyIndex < (selectedPhoto?.history.length ?? 0) - 1}
+        canUndo={(selectedPhoto?.historyIndex ?? -1) > -1}
+        canRedo={(selectedPhoto?.historyIndex ?? -1) < (selectedPhoto?.history.length ?? 0) - 1}
         hasEnhanced={hasEnhanced}
         onUndo={onUndo}
         onRedo={onRedo}
@@ -234,7 +223,6 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
 
       {/* Main content */}
       <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[220px_1fr_200px]">
-
         {/* Left: photo strip */}
         <div className="space-y-3">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -258,7 +246,6 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
             })}
           </div>
 
-          {/* Per-photo history (mobile: hidden, desktop: shown) */}
           <div className="hidden lg:block">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               Edit history
@@ -271,9 +258,9 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
           </div>
         </div>
 
-        {/* Center: main preview / compare */}
+        {/* Center: preview / compare */}
         <Card className="relative flex items-center justify-center overflow-hidden bg-checkerboard p-2">
-          {showCompare ? (
+          {hasEnhanced ? (
             <PhotoCompareSlider
               originalUrl={originalUrl}
               enhancedUrl={currentUrl}
@@ -282,11 +269,13 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={currentUrl}
-                alt="Preview"
-                className="max-h-[480px] max-w-full rounded-lg object-contain"
-              />
+              {currentUrl && (
+                <img
+                  src={currentUrl}
+                  alt="Preview"
+                  className="max-h-[480px] max-w-full rounded-lg object-contain"
+                />
+              )}
               <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5" />
                 Apply an enhancement to see before/after comparison
@@ -321,7 +310,6 @@ export function PhotoStudio({ files, listingId, platform, onContinue, onSkip }: 
         </Button>
       </div>
 
-      {/* Hidden download anchor */}
       {/* eslint-disable-next-line jsx-a11y/anchor-has-content */}
       <a ref={downloadRef} className="hidden" />
     </div>

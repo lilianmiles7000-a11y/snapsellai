@@ -19,9 +19,9 @@ interface PhotoActionsProps {
 }
 
 const GROUPS = [
-  { key: 'adjust', label: 'Adjustments' },
-  { key: 'background', label: 'Background' },
-  { key: 'transform', label: 'Transform' },
+  { key: 'adjust',     label: 'Adjustments' },
+  { key: 'background', label: 'Background'  },
+  { key: 'transform',  label: 'Transform'   },
 ] as const;
 
 export function PhotoActions({ onApply, loadingAction, appliedActions, disabled }: PhotoActionsProps) {
@@ -56,17 +56,16 @@ export function PhotoActions({ onApply, loadingAction, appliedActions, disabled 
                       'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
                       isDone ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground'
                     )}>
-                      {isLoading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : isDone ? (
-                        <Check className="h-3.5 w-3.5" />
-                      ) : (
-                        <Icon className="h-3.5 w-3.5" />
-                      )}
+                      {isLoading
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : isDone
+                          ? <Check className="h-3.5 w-3.5" />
+                          : <Icon className="h-3.5 w-3.5" />
+                      }
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-foreground">{item.label}</p>
-                      <p className="truncate text-[10px] text-muted-foreground">{item.description}</p>
+                      <p className="truncate text-[10px] text-muted-foreground">{item.desc}</p>
                     </div>
                   </button>
                 );

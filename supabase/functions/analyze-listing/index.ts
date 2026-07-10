@@ -12,12 +12,19 @@ const VISION_MODEL = "gpt-4o";
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
+  // Guard: OpenAI key is required for this function.
+  if (!OPENAI_KEY) {
+    return new Response(
+      JSON.stringify({ error: "AI analysis is not configured. Set OPENAI_API_KEY in your Supabase project secrets." }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const { image_urls, platform } = await req.json();
     if (!image_urls?.length) throw new Error("image_urls is required");
-    if (!OPENAI_KEY) throw new Error("OPENAI_API_KEY is not configured.");
 
-    const imageMessages = image_urls.slice(0, 10).map((url: string) => ({
+    const imageMessages = (image_urls as string[]).slice(0, 10).map((url: string) => ({
       type: "image_url",
       image_url: { url, detail: "high" },
     }));
@@ -39,13 +46,13 @@ The JSON must exactly match this schema:
   "suggested_price": number (EUR, realistic market value),
   "quick_sale_price": number (EUR, 20-30% below suggested),
   "premium_price": number (EUR, 20% above suggested),
-  "confidence": number (0.0-1.0, your confidence in this analysis),
+  "confidence": number (0.0-1.0),
   "keywords": string[] (8-12 SEO keywords),
   "tags": string[] (5-8 hashtag-style tags without #),
   "attributes": {}
 }
 If you cannot detect a field, use null for nullable fields or "Unknown" for strings.
-Never refuse. Always return valid JSON.`;
+Always return valid JSON.`;
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -68,11 +75,9 @@ Never refuse. Always return valid JSON.`;
 
     const data = await res.json();
     const content = data.choices?.[0]?.message?.content;
-    if (!content) throw new Error("No content from OpenAI");
+    if (!content) throw new Error("No content returned from OpenAI");
 
     const parsed = JSON.parse(content);
-
-    // Sanitize
     const sanitized = {
       title: String(parsed.title ?? "Untitled Item"),
       description: String(parsed.description ?? "No description available."),
@@ -90,16 +95,17 @@ Never refuse. Always return valid JSON.`;
       confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.7)),
       keywords: Array.isArray(parsed.keywords) ? parsed.keywords.map(String).slice(0, 12) : [],
       tags: Array.isArray(parsed.tags) ? parsed.tags.map(String).slice(0, 8) : [],
-      attributes: typeof parsed.attributes === "object" ? parsed.attributes : {},
+      attributes: typeof parsed.attributes === "object" && parsed.attributes !== null ? parsed.attributes : {},
     };
 
     return new Response(JSON.stringify(sanitized), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const message = err instanceof Error ? err.message : "Internal server error";
+    return new Response(
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });

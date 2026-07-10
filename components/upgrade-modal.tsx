@@ -1,11 +1,13 @@
 'use client';
 
-import { Zap, ArrowRight, Check, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { createCheckoutSession } from '@/services/subscriptions';
 import { useState } from 'react';
+import { Zap, ArrowRight, Check } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { createCheckoutSession } from '@/services/subscriptions';
+import { isStripeConfigured, STRIPE_PRO_PRICE_ID } from '@/lib/env';
 import { toast } from 'sonner';
 
 interface UpgradeModalProps {
@@ -26,15 +28,15 @@ const PRO_FEATURES = [
 
 export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
   const [loading, setLoading] = useState(false);
+  const stripeReady = isStripeConfigured();
 
   const onUpgrade = async () => {
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
-    if (!priceId) {
+    if (!stripeReady || !STRIPE_PRO_PRICE_ID) {
       toast.error('Billing is not yet configured. Contact support.');
       return;
     }
     setLoading(true);
-    const { url, error } = await createCheckoutSession(priceId);
+    const { url, error } = await createCheckoutSession(STRIPE_PRO_PRICE_ID);
     setLoading(false);
     if (error || !url) {
       toast.error(error ?? 'Could not start checkout');
@@ -52,7 +54,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
           </div>
           <DialogTitle className="text-xl">Upgrade to Pro</DialogTitle>
           <DialogDescription>
-            {reason ?? 'You\'ve reached your free plan limit.'}
+            {reason ?? "You've reached your free plan limit."}
           </DialogDescription>
         </DialogHeader>
 
@@ -67,7 +69,6 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
               <p className="text-xs text-muted-foreground">/month</p>
             </div>
           </div>
-
           <ul className="space-y-2">
             {PRO_FEATURES.map((f) => (
               <li key={f} className="flex items-center gap-2.5 text-sm text-foreground">
@@ -79,10 +80,16 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
         </div>
 
         <div className="flex flex-col gap-2 mt-2">
-          <Button onClick={onUpgrade} disabled={loading} variant="gradient" size="lg" className="w-full">
-            {loading ? 'Loading…' : 'Upgrade to Pro — €19/month'}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          {stripeReady ? (
+            <Button onClick={onUpgrade} disabled={loading} variant="gradient" size="lg" className="w-full">
+              {loading ? 'Loading…' : 'Upgrade to Pro — €19/month'}
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
+              Billing is not configured for this project yet.
+            </div>
+          )}
           <Button variant="ghost" size="sm" onClick={onClose} className="text-muted-foreground">
             Maybe later
           </Button>

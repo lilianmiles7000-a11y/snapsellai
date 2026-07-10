@@ -1,22 +1,20 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/env";
 
 let client: ReturnType<typeof createBrowserClient> | null = null;
 
 export function getSupabaseBrowserClient() {
+  if (typeof window === "undefined") {
+    // During SSR / static build — return null; auth-context guards against this.
+    return null as unknown as ReturnType<typeof createBrowserClient>;
+  }
   if (!client) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) {
-      if (typeof window === 'undefined') {
-        // During SSR/build with missing env vars — return a dummy that won't crash
-        // The actual client will be created client-side when env vars are present
-        return null as unknown as ReturnType<typeof createBrowserClient>;
-      }
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       throw new Error(
-        "Supabase URL and anon key are not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+        "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
       );
     }
-    client = createBrowserClient(url, key);
+    client = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   return client;
 }
