@@ -2,13 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Sparkles, ArrowRight, ArrowLeft, Check, RefreshCw, Wand2,
-  Tag, FileText, Hash, Palette, Ruler, Shirt, TrendingUp,
-  Zap, Save, Pencil, Eye, Copy, Loader2, Image as ImageIcon,
-  Undo2, Redo2, RotateCcw, Download, Eraser, Sun, Focus,
-  Crop, Square, Store, Layers, ChevronRight, X,
-} from 'lucide-react';
+import { Sparkles, ArrowRight, ArrowLeft, Check, RefreshCw, Wand as Wand2, Tag, FileText, Hash, Palette, Ruler, Shirt, TrendingUp, Zap, Save, Pencil, Eye, Copy, Loader as Loader2, Image as ImageIcon, Undo2, Redo2, RotateCcw, Download, Eraser, Sun, Focus, Crop, Square, Store, Layers, ChevronRight, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

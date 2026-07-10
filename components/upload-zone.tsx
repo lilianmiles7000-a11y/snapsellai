@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useId } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, X, Loader as Loader2, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { compressImage, validateImageFile } from '@/lib/image-utils';
 import { uploadListingImage } from '@/lib/storage';

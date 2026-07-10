@@ -2,9 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard, Plus, Clock, Settings, Zap, Wand2, LogOut, ChevronRight,
-} from 'lucide-react';
+import { LayoutDashboard, Plus, Clock, Settings, Zap, Wand as Wand2, LogOut, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

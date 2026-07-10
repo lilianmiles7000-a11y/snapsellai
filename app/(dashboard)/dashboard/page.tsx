@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Package, TrendingUp, Wallet, Clock, Zap, ArrowRight, ImageIcon, Wand2 } from 'lucide-react';
+import { Plus, Package, TrendingUp, Wallet, Clock, Zap, ArrowRight, Image as ImageIcon, Wand as Wand2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/stat-card';

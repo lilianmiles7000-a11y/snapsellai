@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Wand2 } from 'lucide-react';
+import { Menu, X, Wand as Wand2 } from 'lucide-react';
 import { Sidebar } from './sidebar';
 
 export function MobileNav() {

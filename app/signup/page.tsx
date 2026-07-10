@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Wand2, Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Wand as Wand2, Mail, Lock, User, Eye, EyeOff, Loader as Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

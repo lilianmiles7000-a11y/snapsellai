@@ -5,7 +5,7 @@ import type { Listing } from '@/types';
 import { PlatformBadge } from './platform-badge';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MoreVertical, Trash2, Copy, Tag, Calendar } from 'lucide-react';
+import { MoveVertical as MoreVertical, Trash2, Copy, Tag, Calendar } from 'lucide-react';
 import { useState } from 'react';
 import { formatPrice } from '@/lib/utils';
 import { formatDate } from '@/lib/utils';

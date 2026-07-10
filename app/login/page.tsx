@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Wand2, Mail, Lock, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
+import { Wand as Wand2, Mail, Lock, Eye, EyeOff, Loader as Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

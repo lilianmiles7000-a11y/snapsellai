@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { User, CreditCard, Bell, Shield, Wand2, Check, Loader2, LogOut, Trash2, Download } from 'lucide-react';
+import { User, CreditCard, Bell, Shield, Wand as Wand2, Check, Loader as Loader2, LogOut, Trash2, Download } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

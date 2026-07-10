@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { ArrowRight, Check, Zap, Wand2, Image, Tag, ChevronDown, Star } from 'lucide-react';
+import { ArrowRight, Check, Zap, Wand as Wand2, Image, Tag, ChevronDown, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
