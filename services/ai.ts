@@ -1,5 +1,5 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { edgeFunctionUrl, SUPABASE_ANON_KEY, isAIConfigured } from "@/lib/env";
+import { edgeFunctionUrl, SUPABASE_ANON_KEY, isOpenAIConfigured } from "@/lib/env";
 import type { VisionAnalysisResult } from "@/types/ai";
 import type { Platform } from "@/types";
 
@@ -14,7 +14,7 @@ export async function analyzeImages(
   imageUrls: string[],
   platform: Platform
 ): Promise<VisionAnalysisResult> {
-  if (!isAIConfigured()) {
+  if (!isOpenAIConfigured()) {
     throw new AIUnavailableError();
   }
 

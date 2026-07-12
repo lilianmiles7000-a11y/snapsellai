@@ -15,6 +15,7 @@ export interface VisionAnalysisResult {
   confidence: number;
   keywords: string[];
   tags: string[];
+  hashtags: string[];
   attributes: Record<string, string>;
 }
 

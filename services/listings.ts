@@ -24,6 +24,7 @@ function mapListing(row: Record<string, unknown>): Listing {
     status: (row.status as Listing['status']) ?? 'draft',
     seo_keywords: (row.seo_keywords as string[]) ?? null,
     tags: (row.tags as string[]) ?? null,
+    hashtags: (row.hashtags as string[]) ?? null,
     images: (row.listing_images as ListingImage[]) ?? [],
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,

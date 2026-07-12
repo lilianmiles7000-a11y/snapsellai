@@ -66,6 +66,7 @@ export interface Listing {
   status: ListingStatus;
   seo_keywords: string[] | null;
   tags: string[] | null;
+  hashtags: string[] | null;
   images: ListingImage[];
   created_at: string;
   updated_at: string;

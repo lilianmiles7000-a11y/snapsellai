@@ -175,7 +175,7 @@ export default function NewListingPage() {
           subcategory: res.subcategory, condition: res.condition, size: res.size, colors: res.colors,
           materials: res.materials, gender: res.gender, suggested_price: res.suggested_price,
           quick_sale_price: res.quick_sale_price, premium_price: res.premium_price,
-          confidence: res.confidence, seo_keywords: res.keywords, tags: res.tags, status: 'ready',
+          confidence: res.confidence, seo_keywords: res.keywords, tags: res.tags, hashtags: res.hashtags, status: 'ready',
         });
         await refreshProfile();
       }
@@ -195,7 +195,7 @@ export default function NewListingPage() {
       size: editable.size, colors: editable.colors, materials: editable.materials, gender: editable.gender,
       suggested_price: editable.suggested_price, quick_sale_price: editable.quick_sale_price,
       premium_price: editable.premium_price, confidence: editable.confidence,
-      seo_keywords: editable.keywords, tags: editable.tags, status: 'ready',
+      seo_keywords: editable.keywords, tags: editable.tags, hashtags: editable.hashtags, status: 'ready',
     });
     await refreshProfile();
     setSaving(false);
@@ -598,6 +598,28 @@ export default function NewListingPage() {
                     {editable.keywords.map((k) => <Badge key={k} variant="outline" className="text-[10px] border-border text-muted-foreground">{k}</Badge>)}
                   </div>
                 </Card>
+
+                {/* Hashtags */}
+                {editable.hashtags?.length > 0 && (
+                  <Card className="p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-2"><Hash className="h-3 w-3" />Hashtags</p>
+                        <div className="flex flex-wrap gap-1">
+                          {editable.hashtags.map((h) => (
+                            <Badge key={h} variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary font-mono">{h}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => navigator.clipboard.writeText((editable.hashtags ?? []).join(' ')).then(() => toast.success('Hashtags copied!'))}
+                        className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </Card>
+                )}
               </>
             )}
 
